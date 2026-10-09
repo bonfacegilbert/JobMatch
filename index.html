@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>JobMatch – USA on-site, worldwide remote</title>
+<style>
+:root{--bg:#f6f7f4;--card:#fff;--tx:#1d2a24;--mut:#64706a;--ac:#1f7a5c;--ac2:#e6f3ee;--bd:#dde3df;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121816;--card:#1a2420;--tx:#e7efeb;--mut:#93a39b;--ac:#3fb98d;--ac2:#1d3a30;--bd:#2b3a34}}
+:root[data-theme="dark"]{--bg:#121816;--card:#1a2420;--tx:#e7efeb;--mut:#93a39b;--ac:#3fb98d;--ac2:#1d3a30;--bd:#2b3a34}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45}
+header{padding:18px 16px 6px;max-width:1000px;margin:auto}
+h1{margin:0;font-size:22px}
+header p{margin:4px 0 0;color:var(--mut);font-size:14px}
+nav{max-width:1000px;margin:10px auto 0;padding:0 16px;display:flex;gap:8px}
+nav button{border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:8px 14px;border-radius:999px;cursor:pointer;font-size:14px}
+nav button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+main{max-width:1000px;margin:auto;padding:14px 16px 40px}
+.grid{display:grid;grid-template-columns:280px 1fr;gap:16px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.panel,.job{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px}
+.panel h2{font-size:15px;margin:0 0 10px}
+label{display:block;font-size:12px;color:var(--mut);margin:10px 0 4px}
+input,select,textarea{width:100%;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit;font-size:14px}
+.chk{display:flex;gap:6px;align-items:center;font-size:14px;margin:4px 0;color:var(--tx)}
+.chk input{width:auto}
+.jobs{display:grid;gap:10px}
+.job h3{margin:0;font-size:16px}
+.meta{color:var(--mut);font-size:13px;margin:2px 0 8px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.tag{background:var(--ac2);color:var(--ac);padding:2px 8px;border-radius:999px;font-size:12px}
+.tag.new{background:#fff1d6;color:#8a5a00}
+.score{float:right;font-weight:700;color:var(--ac);font-size:18px}
+.why{font-size:12px;color:var(--mut)}
+.btn{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:14px}
+.btn.alt{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+.row{display:flex;gap:8px;margin-top:8px}
+.empty{color:var(--mut);text-align:center;padding:30px}
+.ok{background:var(--ac2);color:var(--ac);padding:10px;border-radius:8px;margin-top:10px;font-size:14px}
+.note{font-size:12px;color:var(--mut);margin-top:16px}
+.hide{display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>JobMatch</h1>
+  <p>On-site jobs across the USA · Remote jobs from anywhere in the world · Firms and cooperatives hiring now</p>
+</header>
+<nav>
+  <button id="t1" class="on" onclick="tab(1)">Find jobs</button>
+  <button id="t2" onclick="tab(2)">Post a job</button>
+  <button id="t3" onclick="tab(3)">Saved & alerts</button>
+</nav>
+<main>
+<section id="v1">
+  <div class="grid">
+    <div class="panel">
+      <h2>My preferences</h2>
+      <label>Skills (comma separated)</label>
+      <input id="skills" placeholder="e.g. excel, customer service, python">
+      <label>Work type</label>
+      <select id="mode"><option value="any">On-site or remote</option><option value="onsite">On-site (USA)</option><option value="remote">Remote (worldwide)</option></select>
+      <div id="stateWrap">
+        <label>US state (for on-site)</label>
+        <select id="state"><option value="">Any state</option></select>
+      </div>
+      <label>Sector</label>
+      <select id="sector"><option value="">Any</option></select>
+      <label>Employer type</label>
+      <div class="chk"><input type="checkbox" id="e_firm" checked> Company / firm</div>
+      <div class="chk"><input type="checkbox" id="e_coop" checked> Cooperative</div>
+      <div class="chk"><input type="checkbox" id="e_ngo" checked> Nonprofit</div>
+      <label>Min yearly pay (USD): <b id="payv">0</b></label>
+      <input type="range" id="pay" min="0" max="200000" step="5000" value="0">
+      <label>Experience</label>
+      <select id="exp"><option value="">Any</option><option>Entry</option><option>Mid</option><option>Senior</option></select>
+      <div class="chk" style="margin-top:12px"><input type="checkbox" id="newonly"> Newly hiring only (last 14 days)</div>
+    </div>
+    <div>
+      <div id="count" class="meta"></div>
+      <div id="jobs" class="jobs"></div>
+    </div>
+  </div>
+</section>
+
+<section id="v2" class="hide">
+  <div class="panel" style="max-width:560px">
+    <h2>Post a job (firms & cooperatives)</h2>
+    <label>Job title</label><input id="p_title">
+    <label>Organization</label><input id="p_org">
+    <label>Employer type</label>
+    <select id="p_type"><option value="firm">Company / firm</option><option value="coop">Cooperative</option><option value="ngo">Nonprofit</option></select>
+    <label>Work type</label>
+    <select id="p_mode"><option value="onsite">On-site (USA)</option><option value="remote">Remote (worldwide)</option></select>
+    <label>Location (city, state – or "Worldwide")</label><input id="p_loc">
+    <label>Sector</label><select id="p_sector"></select>
+    <label>Yearly pay (USD)</label><input id="p_pay" type="number" placeholder="55000">
+    <label>Required skills (comma separated)</label><input id="p_skills">
+    <div class="row"><button class="btn" onclick="postJob()">Publish job</button></div>
+    <div id="p_ok"></div>
+  </div>
+</section>
+
+<section id="v3" class="hide">
+  <div class="panel" style="max-width:560px">
+    <h2>Job alerts</h2>
+    <p class="why">Alerts use your current preferences from the Find jobs tab.</p>
+    <label>Notify me by</label>
+    <select id="a_ch"><option>Email</option><option>SMS</option><option>WhatsApp</option></select>
+    <label>Contact</label><input id="a_ct" placeholder="email or phone">
+    <label>How often</label><select id="a_fr"><option>Instantly</option><option>Daily</option><option>Weekly</option></select>
+    <div class="row"><button class="btn" onclick="saveAlert()">Save alert</button></div>
+    <div id="a_ok"></div>
+  </div>
+  <h2 style="font-size:16px;margin:18px 0 8px">Saved jobs</h2>
+  <div id="saved" class="jobs"></div>
+</section>
+<p class="note">Prototype with sample data. A real version would pull from employer postings, ATS feeds and licensed job APIs.</p>
+</main>
+
+<script>
+var STATES=["Alabama","Arizona","California","Colorado","Florida","Georgia","Illinois","Massachusetts","Michigan","Minnesota","New York","North Carolina","Ohio","Oregon","Pennsylvania","Texas","Washington","Wisconsin"];
+var SECTORS=["Technology","Healthcare","Education","Retail & Hospitality","Skilled Trades","Agriculture & Food","Finance & Admin","Logistics","Customer Support","Creative & Media"];
+var jobs=[
+{id:1,t:"Customer Support Agent",o:"BrightDesk",ty:"firm",m:"remote",l:"Worldwide",s:"Customer Support",p:42000,x:"Entry",k:["customer service","email","zendesk"],d:2},
+{id:2,t:"Junior Python Developer",o:"Northwind Labs",ty:"firm",m:"remote",l:"Worldwide",s:"Technology",p:78000,x:"Entry",k:["python","sql","git"],d:5},
+{id:3,t:"Worker-Owner Baker",o:"Rising Loaf Cooperative",ty:"coop",m:"onsite",l:"Oakland, California",s:"Agriculture & Food",p:44000,x:"Entry",k:["baking","food safety","teamwork"],d:3},
+{id:4,t:"Registered Nurse",o:"Lakeview Health",ty:"firm",m:"onsite",l:"Chicago, Illinois",s:"Healthcare",p:86000,x:"Mid",k:["nursing","patient care","charting"],d:9},
+{id:5,t:"Solar Installer",o:"Sunshare Energy Co-op",ty:"coop",m:"onsite",l:"Austin, Texas",s:"Skilled Trades",p:58000,x:"Entry",k:["electrical","safety","tools"],d:1},
+{id:6,t:"Bookkeeper",o:"Commons Accounting",ty:"coop",m:"remote",l:"Worldwide",s:"Finance & Admin",p:54000,x:"Mid",k:["excel","quickbooks","bookkeeping"],d:6},
+{id:7,t:"Warehouse Associate",o:"FreightWell",ty:"firm",m:"onsite",l:"Charlotte, North Carolina",s:"Logistics",p:38000,x:"Entry",k:["forklift","inventory","teamwork"],d:4},
+{id:8,t:"High School Math Teacher",o:"Riverside Charter",ty:"ngo",m:"onsite",l:"Columbus, Ohio",s:"Education",p:52000,x:"Mid",k:["teaching","math","classroom management"],d:12},
+{id:9,t:"Content Designer",o:"Pixel & Pine",ty:"firm",m:"remote",l:"Worldwide",s:"Creative & Media",p:60000,x:"Mid",k:["design","figma","writing"],d:8},
+{id:10,t:"Line Cook",o:"Harbor Table Collective",ty:"coop",m:"onsite",l:"Seattle, Washington",s:"Retail & Hospitality",p:46000,x:"Entry",k:["cooking","food safety","speed"],d:2},
+{id:11,t:"Data Analyst",o:"CivicCount",ty:"ngo",m:"remote",l:"Worldwide",s:"Technology",p:72000,x:"Mid",k:["excel","sql","data analysis"],d:7},
+{id:12,t:"Senior Support Lead",o:"BrightDesk",ty:"firm",m:"remote",l:"Worldwide",s:"Customer Support",p:70000,x:"Senior",k:["customer service","leadership","zendesk"],d:20},
+{id:13,t:"Farm Operations Coordinator",o:"Green Valley Growers Co-op",ty:"coop",m:"onsite",l:"Madison, Wisconsin",s:"Agriculture & Food",p:50000,x:"Mid",k:["logistics","agriculture","excel"],d:3},
+{id:14,t:"Medical Receptionist",o:"Peachtree Clinic",ty:"firm",m:"onsite",l:"Atlanta, Georgia",s:"Healthcare",p:37000,x:"Entry",k:["customer service","scheduling","ehr"],d:5}
+];
+var $=function(i){return document.getElementById(i)};
+var saved=[];
+try{var sv=localStorage.getItem("jm_saved");if(sv)saved=JSON.parse(sv)}catch(e){}
+function persist(){try{localStorage.setItem("jm_saved",JSON.stringify(saved))}catch(e){}}
+STATES.forEach(function(s){$("state").insertAdjacentHTML("beforeend","<option>"+s+"</option>")});
+SECTORS.forEach(function(s){$("sector").insertAdjacentHTML("beforeend","<option>"+s+"</option>");$("p_sector").insertAdjacentHTML("beforeend","<option>"+s+"</option>")});
+function tab(n){for(var i=1;i<=3;i++){$("v"+i).classList.toggle("hide",i!==n);$("t"+i).classList.toggle("on",i===n)}if(n===3)renderSaved()}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+var TL={firm:"Company",coop:"Cooperative",ngo:"Nonprofit"};
+function card(j,sc,why){
+  var isS=saved.indexOf(j.id)>-1;
+  return '<div class="job">'+(sc!=null?'<span class="score">'+sc+'%</span>':'')+'<h3>'+esc(j.t)+'</h3><div class="meta">'+esc(j.o)+' · '+esc(j.l)+' · $'+j.p.toLocaleString()+'/yr · '+j.x+'</div><div class="tags"><span class="tag">'+TL[j.ty]+'</span><span class="tag">'+(j.m==="remote"?"Remote":"On-site")+'</span><span class="tag">'+esc(j.s)+'</span>'+(j.d<=14?'<span class="tag new">Newly hiring</span>':'')+'</div>'+(why?'<div class="why">'+why+'</div>':'')+'<div class="row"><button class="btn" onclick="applyJob('+j.id+')">Apply</button><button class="btn alt" onclick="toggleSave('+j.id+')">'+(isS?"Saved ✓":"Save")+'</button></div></div>';
+}
+function render(){
+  $("payv").textContent=Number($("pay").value).toLocaleString();
+  $("stateWrap").style.display=$("mode").value==="remote"?"none":"";
+  var sk=$("skills").value.toLowerCase().split(",").map(function(s){return s.trim()}).filter(Boolean);
+  var out=[];
+  jobs.forEach(function(j){
+    if($("mode").value!=="any"&&j.m!==$("mode").value)return;
+    if(j.m==="onsite"&&$("state").value&&j.l.indexOf($("state").value)<0)return;
+    if($("sector").value&&j.s!==$("sector").value)return;
+    if(!$("e_"+j.ty).checked)return;
+    if(j.p<Number($("pay").value))return;
+    if($("exp").value&&j.x!==$("exp").value)return;
+    if($("newonly").checked&&j.d>14)return;
+    var hit=[];
+    if(sk.length){j.k.concat(j.t.toLowerCase().split(" ")).forEach(function(k){sk.forEach(function(s){if(k.indexOf(s)>-1||s.indexOf(k)>-1){if(hit.indexOf(k)<0)hit.push(k)}})})}
+    var score=sk.length?Math.min(100,Math.round(hit.length/Math.max(j.k.length,1)*100)):null;
+    if(sk.length&&hit.length===0)return;
+    var why=sk.length?"Matches your skills: "+esc(hit.join(", ")):"";
+    out.push({j:j,s:score,w:why});
+  });
+  out.sort(function(a,b){return (b.s||0)-(a.s||0)||a.j.d-b.j.d});
+  $("count").textContent=out.length+" job"+(out.length===1?"":"s")+" match your preferences";
+  $("jobs").innerHTML=out.length?out.map(function(o){return card(o.j,o.s,o.w)}).join(""):'<div class="empty">No matches yet. Try loosening your filters or adding different skills.</div>';
+}
+function toggleSave(id){var i=saved.indexOf(id);if(i>-1)saved.splice(i,1);else saved.push(id);persist();render();renderSaved()}
+function applyJob(id){var j=jobs.filter(function(x){return x.id===id})[0];alert("In the full app, this opens the application for \""+j.t+"\" at "+j.o+" (or links to the employer's page).")}
+function renderSaved(){var s=jobs.filter(function(j){return saved.indexOf(j.id)>-1});$("saved").innerHTML=s.length?s.map(function(j){return card(j)}).join(""):'<div class="empty">No saved jobs yet.</div>'}
+function postJob(){
+  var t=$("p_title").value.trim(),o=$("p_org").value.trim();
+  if(!t||!o){$("p_ok").innerHTML='<div class="ok">Please add a job title and organization.</div>';return}
+  var m=$("p_mode").value;
+  jobs.unshift({id:Date.now(),t:t,o:o,ty:$("p_type").value,m:m,l:$("p_loc").value.trim()||(m==="remote"?"Worldwide":"USA"),s:$("p_sector").value,p:Number($("p_pay").value)||0,x:"Mid",k:$("p_skills").value.toLowerCase().split(",").map(function(s){return s.trim()}).filter(Boolean),d:0});
+  $("p_ok").innerHTML='<div class="ok">Published. It now shows under Find jobs with a "Newly hiring" badge.</div>';
+  ["p_title","p_org","p_loc","p_pay","p_skills"].forEach(function(i){$(i).value=""});
+  render();
+}
+function saveAlert(){var c=$("a_ct").value.trim();$("a_ok").innerHTML='<div class="ok">'+(c?"Alert saved: "+esc($("a_fr").value)+" via "+esc($("a_ch").value)+" to "+esc(c)+". (Demo only; nothing is sent.)":"Please enter a contact.")+'</div>'}
+["skills","mode","state","sector","e_firm","e_coop","e_ngo","pay","exp","newonly"].forEach(function(i){$(i).addEventListener("input",render);$(i).addEventListener("change",render)});
+render();
+</script>
+</body>
+</html>
