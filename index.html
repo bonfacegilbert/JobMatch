@@ -41,6 +41,7 @@ input,select,textarea{width:100%;padding:8px;border:1px solid var(--bd);border-r
 .ok{background:var(--ac2);color:var(--ac);padding:10px;border-radius:8px;margin-top:10px;font-size:14px}
 .note{font-size:12px;color:var(--mut);margin-top:16px}
 .hide{display:none}
+.cvbox{margin:2px 0 4px}
 </style>
 </head>
 <body>
@@ -58,6 +59,12 @@ input,select,textarea{width:100%;padding:8px;border:1px solid var(--bd);border-r
   <div class="grid">
     <div class="panel">
       <h2>My preferences</h2>
+      <div class="cvbox">
+        <label for="cvfile" class="btn alt" style="cursor:pointer;display:inline-block">📄 Upload CV to auto-fill</label>
+        <input type="file" id="cvfile" accept=".pdf,.docx,.txt" class="hide">
+        <div id="cvstatus" class="why" style="margin-top:6px"></div>
+        <div class="why">Parsed in your browser — your CV is never uploaded anywhere.</div>
+      </div>
       <label>Skills (comma separated)</label>
       <input id="skills" placeholder="e.g. excel, customer service, python">
       <label>Work type</label>
@@ -120,6 +127,8 @@ input,select,textarea{width:100%;padding:8px;border:1px solid var(--bd);border-r
 <p class="note">Prototype with sample data. A real version would pull from employer postings, ATS feeds and licensed job APIs.</p>
 </main>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script>
 var STATES=["Alabama","Arizona","California","Colorado","Florida","Georgia","Illinois","Massachusetts","Michigan","Minnesota","New York","North Carolina","Ohio","Oregon","Pennsylvania","Texas","Washington","Wisconsin"];
 var SECTORS=["Technology","Healthcare","Education","Retail & Hospitality","Skilled Trades","Agriculture & Food","Finance & Admin","Logistics","Customer Support","Creative & Media"];
@@ -190,6 +199,63 @@ function postJob(){
 }
 function saveAlert(){var c=$("a_ct").value.trim();$("a_ok").innerHTML='<div class="ok">'+(c?"Alert saved: "+esc($("a_fr").value)+" via "+esc($("a_ch").value)+" to "+esc(c)+". (Demo only; nothing is sent.)":"Please enter a contact.")+'</div>'}
 ["skills","mode","state","sector","e_firm","e_coop","e_ngo","pay","exp","newonly"].forEach(function(i){$(i).addEventListener("input",render);$(i).addEventListener("change",render)});
+/* CV upload: text is extracted in-browser (PDF via pdf.js, DOCX via mammoth),
+   skills are matched against the job skill vocabulary, and the preferences
+   form is auto-filled. Nothing is ever uploaded. */
+if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"}
+var CV_BASE=["python","sql","git","javascript","typescript","java","c++","html","css","react","node","aws","docker","linux","machine learning","data analysis","excel","figma","design","writing","nursing","patient care","charting","ehr","cpr","first aid","scheduling","teaching","math","classroom management","curriculum","tutoring","cooking","baking","food safety","cashier","customer service","email","zendesk","chat support","troubleshooting","electrical","safety","tools","plumbing","hvac","carpentry","forklift","welding","quickbooks","bookkeeping","accounting","payroll","data entry","inventory","teamwork","shipping","warehouse","driving","cdl","leadership","communication","spanish","microsoft office","word","powerpoint","project management","sales","marketing","social media","time management","problem solving","speed"];
+var CV_SKILLS={};jobs.forEach(function(j){j.k.forEach(function(k){CV_SKILLS[k]=1})});CV_BASE.forEach(function(k){CV_SKILLS[k]=1});
+CV_SKILLS=Object.keys(CV_SKILLS).sort(function(a,b){return b.length-a.length});
+function cvTextSkills(t){
+  t=" "+t.toLowerCase().replace(/[^a-z0-9+#. ]/g," ")+" ";
+  var found=[];
+  CV_SKILLS.forEach(function(s){
+    var p=s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&").replace(/ /g,"\\s+");
+    if(new RegExp("(^|[^a-z0-9])"+p+"([^a-z0-9]|$)").test(t))found.push(s);
+  });
+  return found;
+}
+function cvGuessExp(t){
+  t=t.toLowerCase();var m,re=/(\d{1,2})\s*\+?\s*(years?|yrs?)/g,maxY=0;
+  while((m=re.exec(t)))maxY=Math.max(maxY,parseInt(m[1],10));
+  if(maxY>=6||(/\b(senior|lead|principal|manager|director)\b/.test(t)&&maxY>=4))return "Senior";
+  if(maxY>=2)return "Mid";
+  if(maxY>0||/\b(junior|entry[-\s]?level|intern)\b/.test(t))return "Entry";
+  return "";
+}
+function cvReadFile(f){
+  return f.arrayBuffer().then(function(buf){
+    var n=f.name.toLowerCase();
+    if(n.endsWith(".txt"))return new TextDecoder().decode(buf);
+    if(n.endsWith(".docx")){
+      if(!window.mammoth)throw new Error("docx-lib-missing");
+      return mammoth.extractRawText({arrayBuffer:buf}).then(function(r){return r.value});
+    }
+    if(n.endsWith(".pdf")){
+      if(!window.pdfjsLib)throw new Error("pdf-lib-missing");
+      return pdfjsLib.getDocument({data:buf}).promise.then(function(pdf){
+        var ps=[];for(var i=1;i<=pdf.numPages;i++)ps.push(pdf.getPage(i).then(function(pg){return pg.getTextContent().then(function(tc){return tc.items.map(function(it){return it.str}).join(" ")})}));
+        return Promise.all(ps).then(function(pages){return pages.join("\n")});
+      });
+    }
+    throw new Error("bad-type");
+  });
+}
+$("cvfile").addEventListener("change",function(){
+  var f=this.files[0];if(!f)return;
+  $("cvstatus").textContent="Reading "+f.name+"…";
+  cvReadFile(f).then(function(text){
+    if(!text.trim())throw new Error("empty");
+    var skills=cvTextSkills(text),eg=cvGuessExp(text);
+    if(skills.length)$("skills").value=skills.join(", ");
+    if(eg)$("exp").value=eg;
+    render();
+    $("cvstatus").textContent=skills.length?("Found "+skills.length+" skill"+(skills.length>1?"s":"")+" from your CV: "+skills.slice(0,12).join(", ")+(skills.length>12?"…":"")+(eg?". Experience set to "+eg+" (please check).":".")):"Couldn't spot known skills — try adding them manually.";
+  }).catch(function(e){
+    $("cvstatus").textContent=e.message==="bad-type"?"Please upload a PDF, DOCX or TXT file.":(e.message==="pdf-lib-missing"||e.message==="docx-lib-missing")?"Couldn't load the file parser (are you online?). Try again.":"Couldn't read that file — it may be scanned, encrypted, or image-only.";
+  });
+  this.value="";
+});
 render();
 </script>
 </body>
