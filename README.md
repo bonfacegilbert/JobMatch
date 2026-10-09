@@ -23,7 +23,7 @@ Open `index.html` in any browser. No install needed.
 ## Roadmap
 
 1. User accounts and saved preference profiles
-2. CV upload with skill extraction
+2. ✅ CV upload with skill extraction (client-side: PDF/DOCX/TXT parsed in-browser, skills auto-fill preferences)
 3. Real backend: Node.js or Python API with PostgreSQL
 4. Job data sources: direct employer and co-op postings, licensed job APIs (e.g. Adzuna, Jooble), public ATS feeds (Greenhouse, Lever)
 5. Search upgrade: Postgres full-text search, then Meilisearch or Elasticsearch
